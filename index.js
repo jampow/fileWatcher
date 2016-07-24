@@ -1,5 +1,7 @@
 const fs = require('fs');
 const path = require('path');
+const LocalStorage = require('node-localstorage').LocalStorage;
+const localStorage = new LocalStorage('./storage');
 
 const pause = 1000; //miliseconds
 
@@ -22,10 +24,9 @@ function mapDir(dir){
 			var fullPath = path.join(dir, item);
 			if(isDir(fullPath))
 				mapDir(fullPath);
-			//else
-				//console.log(item);
+			else
+				checkFile(fullPath);
 		});
-
 }
 
 function isDir(file){
@@ -38,7 +39,37 @@ function repeater(startPoint){
 	setTimeout(function(){ repeater(startPoint); }, pause);
 }
 
-repeater('.');
+function checkFile(file){
+	var oldTimestamp = localStorage.getItem(file);
+	var newTimestamp = fs.statSync(file).mtime.toString();
+
+	console.log('old', oldTimestamp);
+	console.log('new', newTimestamp);
+	if(!oldTimestamp) {
+		// Novo arquivo
+		newFile(file, newTimestamp);
+	} else if(oldTimestamp !== newTimestamp) {
+		// arquivo atualizado
+		updatedFile(file, newTimestamp);
+	}
+
+}
+
+function newFile(file, timestamp) {
+	console.log('cretedFile');
+	storeFile(file, timestamp);
+}
+
+function updatedFile(file, timestamp) {
+	console.log('updatedFile');
+	storeFile(file, timestamp);
+}
+
+function storeFile(file, timestamp) {
+	localStorage.setItem(file, timestamp);
+}
+
+repeater('dir');
 
 
 

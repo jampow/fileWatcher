@@ -11,5 +11,8 @@
     "watcher"
   ],
   "author": "Gianpalo M. Soares",
-  "license": "ISC"
+  "license": "ISC",
+  "dependencies": {
+    "node-localstorage": "^1.3.0"
+  }
 }
