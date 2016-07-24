@@ -12,10 +12,6 @@ var files = [];
 function mapDir(dir){
 	var files = fs.readdirSync(dir);
 
-	console.log('dir', dir);
-	console.log('files', files);
-	console.log('-----------------------');
-
 	files
 		.filter(function(item){
 			return blackList.indexOf(item) == -1;
@@ -35,7 +31,6 @@ function isDir(file){
 
 function repeater(startPoint){
 	mapDir(startPoint);
-	console.log('=======================');
 	setTimeout(function(){ repeater(startPoint); }, pause);
 }
 
@@ -43,8 +38,6 @@ function checkFile(file){
 	var oldTimestamp = localStorage.getItem(file);
 	var newTimestamp = fs.statSync(file).mtime.toString();
 
-	console.log('old', oldTimestamp);
-	console.log('new', newTimestamp);
 	if(!oldTimestamp) {
 		// Novo arquivo
 		newFile(file, newTimestamp);
