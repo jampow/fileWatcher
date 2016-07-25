@@ -1,5 +1,8 @@
 const fs = require('fs');
 const path = require('path');
+const util = require('util');
+const EventEmitter = require('events').EventEmitter;
+
 const LocalStorage = require('node-localstorage').LocalStorage;
 const localStorage = new LocalStorage('./storage');
 
@@ -7,65 +10,64 @@ const pause = 1000; //miliseconds
 
 const blackList = ['.git', '.swp'];
 
-var files = [];
+const Watcher = function(){
+	var self = this;
 
-function mapDir(dir){
-	var files = fs.readdirSync(dir);
+	this.mapDir = function(dir){
+		var files = fs.readdirSync(dir);
 
-	files
-		.filter(function(item){
-			return blackList.indexOf(item) == -1;
-		})
-		.forEach(function(item){
-			var fullPath = path.join(dir, item);
-			if(isDir(fullPath))
-				mapDir(fullPath);
-			else
-				checkFile(fullPath);
-		});
-}
+		files
+			.filter(function(item){
+				return blackList.indexOf(item) == -1;
+			})
+			.forEach(function(item){
+				var fullPath = path.join(dir, item);
+				if(self.isDir(fullPath))
+					self.mapDir(fullPath);
+				else
+					self.checkFile(fullPath);
+			});
+	};
 
-function isDir(file){
-	return fs.statSync(file).isDirectory();
-}
+	this.isDir = function(file){
+		return fs.statSync(file).isDirectory();
+	};
 
-function repeater(startPoint){
-	mapDir(startPoint);
-	setTimeout(function(){ repeater(startPoint); }, pause);
-}
+	this.repeater = function(startPoint){
+		this.mapDir(startPoint);
+		setTimeout(function(){ self.repeater(startPoint); }, pause);
+	};
 
-function checkFile(file){
-	var oldTimestamp = localStorage.getItem(file);
-	var newTimestamp = fs.statSync(file).mtime.toString();
+	this.checkFile = function(file){
+		var oldTimestamp = localStorage.getItem(file);
+		var newTimestamp = fs.statSync(file).mtime.toString();
 
-	if(!oldTimestamp) {
-		// Novo arquivo
-		newFile(file, newTimestamp);
-	} else if(oldTimestamp !== newTimestamp) {
-		// arquivo atualizado
-		updatedFile(file, newTimestamp);
-	}
+		if(!oldTimestamp) {
+			// Novo arquivo
+			this.newFile(file, newTimestamp);
+		} else if(oldTimestamp !== newTimestamp) {
+			// arquivo atualizado
+			this.updatedFile(file, newTimestamp);
+		}
 
-}
+	};
 
-function newFile(file, timestamp) {
-	console.log('cretedFile');
-	storeFile(file, timestamp);
-}
+	this.newFile = function(file, timestamp) {
+		this.emit('createdFile', file);
+		this.storeFile(file, timestamp);
+	};
 
-function updatedFile(file, timestamp) {
-	console.log('updatedFile');
-	storeFile(file, timestamp);
-}
+	this.updatedFile = function(file, timestamp) {
+		this.emit('updatedFile', file);
+		this.storeFile(file, timestamp);
+	};
 
-function storeFile(file, timestamp) {
-	localStorage.setItem(file, timestamp);
-}
+	this.storeFile = function(file, timestamp) {
+		localStorage.setItem(file, timestamp);
+	};
+};
 
-repeater('dir');
+util.inherits(Watcher, EventEmitter);
 
-
-
-
-
+module.exports = new Watcher();
 
